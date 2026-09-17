@@ -1,0 +1,335 @@
+@import "tailwindcss";
+
+:root {
+  --background: #04070a;
+  --foreground: #d8ecea;
+  --aeon-cyan: #4ff4e2;
+  --aeon-cyan-deep: #0e3d38;
+  --aeon-amber: #f0b429;
+  --aeon-red: #ff5a5a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-aeon-cyan: var(--aeon-cyan);
+  --color-aeon-cyan-deep: var(--aeon-cyan-deep);
+  --color-aeon-amber: var(--aeon-amber);
+  --color-aeon-red: var(--aeon-red);
+  --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-oxanium);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.aeon-grid {
+  background-image:
+    linear-gradient(rgba(79, 244, 226, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 244, 226, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.aeon-stars {
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 28% 72%, rgba(79, 244, 226, 0.45), transparent),
+    radial-gradient(1.5px 1.5px at 63% 22%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 81% 64%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 44% 41%, rgba(79, 244, 226, 0.35), transparent),
+    radial-gradient(1.5px 1.5px at 91% 12%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1px 1px at 8% 88%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 52% 91%, rgba(79, 244, 226, 0.3), transparent);
+}
+
+.aeon-scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(0, 0, 0, 0.12) 3px
+  );
+}
+
+@keyframes aeon-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes aeon-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes aeon-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 12px rgba(79, 244, 226, 0.25));
+  }
+  50% {
+    filter: drop-shadow(0 0 28px rgba(79, 244, 226, 0.5));
+  }
+}
+
+.aeon-orbit,
+.aeon-orbit-slow {
+  transform-box: view-box;
+  transform-origin: center;
+}
+
+.aeon-orbit {
+  animation: aeon-orbit 28s linear infinite;
+}
+
+.aeon-orbit-slow {
+  animation: aeon-orbit 48s linear infinite reverse;
+}
+
+.aeon-pulse {
+  animation: aeon-pulse 2.4s ease-in-out infinite;
+}
+
+.aeon-glow {
+  animation: aeon-glow 5s ease-in-out infinite;
+}
+
+.aeon-progress-fill {
+  transition: width 80ms linear;
+}
+
+@keyframes aeon-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes aeon-alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aeon-success-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes aeon-grant-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(79, 244, 226, 0);
+  }
+  45% {
+    box-shadow: 0 0 52px rgba(79, 244, 226, 0.32);
+  }
+  100% {
+    box-shadow: 0 0 90px rgba(79, 244, 226, 0.18);
+  }
+}
+
+@keyframes aeon-lock-flash {
+  0% {
+    box-shadow: 0 0 0 rgba(255, 90, 90, 0);
+  }
+  35% {
+    box-shadow: 0 0 44px rgba(255, 90, 90, 0.38);
+  }
+  100% {
+    box-shadow: 0 0 80px rgba(255, 90, 90, 0.08);
+  }
+}
+
+.aeon-shake {
+  animation: aeon-shake 420ms ease-in-out;
+}
+
+.aeon-alert-in {
+  animation: aeon-alert-in 320ms ease-out;
+}
+
+.aeon-success-in {
+  animation: aeon-success-in 520ms ease-out;
+}
+
+.aeon-grant-glow {
+  animation: aeon-grant-glow 900ms ease-out;
+}
+
+.aeon-lock-flash {
+  animation: aeon-lock-flash 700ms ease-out;
+}
+
+.aeon-map-land {
+  fill: rgba(79, 244, 226, 0.12);
+  stroke: rgba(79, 244, 226, 0.32);
+  stroke-width: 1.2;
+}
+
+@keyframes aeon-radar {
+  from {
+    transform: scale(0.7);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(3.1);
+    opacity: 0;
+  }
+}
+
+.aeon-radar {
+  animation: aeon-radar 1.8s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes aeon-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.aeon-marquee {
+  animation: aeon-marquee 32s linear infinite;
+}
+
+@keyframes aeon-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.aeon-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    rgba(79, 244, 226, 0.04),
+    rgba(79, 244, 226, 0.2),
+    rgba(79, 244, 226, 0.04)
+  );
+  background-size: 220% 100%;
+  animation: aeon-shimmer 1.15s linear infinite;
+}
+
+@keyframes aeon-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.aeon-rise {
+  animation: aeon-rise 560ms ease-out both;
+}
+
+@keyframes aeon-map-scan {
+  from {
+    transform: translateY(-40%);
+  }
+  to {
+    transform: translateY(420%);
+  }
+}
+
+.aeon-map-scanline {
+  animation: aeon-map-scan 1.35s linear infinite;
+}
+
+.aeon-map-acquiring {
+  opacity: 0.28;
+}
+
+@keyframes aeon-marker-in {
+  from {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.aeon-marker-in {
+  animation: aeon-marker-in 420ms ease-out both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aeon-orbit,
+  .aeon-orbit-slow,
+  .aeon-pulse,
+  .aeon-glow,
+  .aeon-shake,
+  .aeon-alert-in,
+  .aeon-success-in,
+  .aeon-grant-glow,
+  .aeon-lock-flash,
+  .aeon-radar,
+  .aeon-marquee,
+  .aeon-shimmer,
+  .aeon-rise,
+  .aeon-map-scanline,
+  .aeon-marker-in {
+    animation: none;
+  }
+
+  .aeon-rise,
+  .aeon-marker-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  .aeon-progress-fill {
+    transition: none;
+  }
+}
