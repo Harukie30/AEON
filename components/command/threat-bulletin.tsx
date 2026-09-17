@@ -10,6 +10,7 @@ import {
   readDismissedThreats,
   subscribeDismissedThreats,
 } from "@/lib/threat-bulletin";
+import { beginIncidentReadback } from "@/lib/watch-officer";
 import type { AlertItem } from "@/lib/mock/alerts";
 
 export function ThreatBulletin({ ready }: { ready: boolean }) {
@@ -54,11 +55,13 @@ export function ThreatBulletin({ ready }: { ready: boolean }) {
   const remaining = queue.length;
 
   function acceptBrief() {
+    beginIncidentReadback(current);
     dismissThreat(current.id);
     router.push(`/command/alerts?brief=${encodeURIComponent(current.id)}`);
   }
 
   function openQueue() {
+    beginIncidentReadback(current);
     dismissThreats(queue.map((item) => item.id));
     router.push(`/command/alerts?brief=${encodeURIComponent(current.id)}`);
   }

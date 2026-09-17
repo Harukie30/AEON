@@ -12,12 +12,16 @@ import {
 import {
   briefFor,
   deckFromPath,
+  findAlert,
   heartbeatFor,
+  incidentBrief,
+  takeQueuedReadback,
+  WATCH_READBACK_EVENT,
   WATCH_VOICE_KEY,
   type WatchLine,
   type WatchTone,
 } from "@/lib/watch-officer";
-import { createWatchVoice } from "@/lib/watch-voice";
+import { getWatchVoice } from "@/lib/watch-voice";
 
 type QueuedLine = WatchLine & { id: string };
 
@@ -40,7 +44,8 @@ export function WatchOfficer({ operatorId }: { operatorId: string }) {
   const revealed = useDeckReveal();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const briefing = Boolean(searchParams.get("brief"));
+  const briefingId = searchParams.get("brief");
+  const briefing = Boolean(briefingId);
   const dismissed = useSyncExternalStore(
     subscribeDismissedThreats,
     readDismissedThreats,
@@ -56,6 +61,7 @@ export function WatchOfficer({ operatorId }: { operatorId: string }) {
   const [current, setCurrent] = useState<QueuedLine | null>(null);
   const [history, setHistory] = useState<QueuedLine[]>([]);
   const [speechDone, setSpeechDone] = useState(true);
+  const [readbackOn, setReadbackOn] = useState(false);
 
   const seq = useRef(0);
   const pending = useRef<QueuedLine[]>([]);
@@ -64,8 +70,10 @@ export function WatchOfficer({ operatorId }: { operatorId: string }) {
   const currentRef = useRef<QueuedLine | null>(null);
   const typedIndex = useRef(0);
   const spokenId = useRef<string | null>(null);
-  const voiceCtl = useRef(createWatchVoice());
-  const paused = held || threatOpen || !revealed;
+  const appliedBriefId = useRef<string | null>(null);
+  const voiceCtl = useRef(getWatchVoice());
+  const paused = held || threatOpen;
+  const shouldSpeak = voice || readbackOn;
   const [queueTick, setQueueTick] = useState(0);
 
   currentRef.current = current;
@@ -92,18 +100,61 @@ export function WatchOfficer({ operatorId }: { operatorId: string }) {
   }, [revealed]);
 
   useEffect(() => {
+    function applyLines(lines: WatchLine[], keepSpeech: boolean) {
+      pending.current = [];
+      enqueue(lines, true);
+      typedIndex.current = 0;
+      spokenId.current = null;
+      if (!keepSpeech) voiceCtl.current.cancel();
+      setSpeechDone(true);
+      setCurrent(null);
+      setTyped("");
+    }
+
+    function onReadback() {
+      const queued = takeQueuedReadback();
+      if (!queued) return;
+      appliedBriefId.current = queued.id;
+      setReadbackOn(true);
+      applyLines(queued.lines, true);
+    }
+
+    window.addEventListener(WATCH_READBACK_EVENT, onReadback);
+    return () => window.removeEventListener(WATCH_READBACK_EVENT, onReadback);
+  }, []);
+
+  useEffect(() => {
     if (!live) return;
+    if (briefingId && appliedBriefId.current === briefingId) return;
+
     const kind = booted.current ? "module" : "boot";
     booted.current = true;
+    const queued = takeQueuedReadback();
+    if (queued) {
+      appliedBriefId.current = queued.id;
+      setReadbackOn(true);
+      pending.current = [];
+      enqueue(queued.lines, true);
+      typedIndex.current = 0;
+      spokenId.current = null;
+      setSpeechDone(true);
+      setCurrent(null);
+      setTyped("");
+      return;
+    }
+
+    appliedBriefId.current = briefingId;
+    if (!briefingId) setReadbackOn(false);
+    const incident = briefingId ? findAlert(briefingId) : null;
     pending.current = [];
-    enqueue(briefFor(deck, operatorId, kind), true);
+    enqueue(incident ? incidentBrief(incident) : briefFor(deck, operatorId, kind), true);
     spokenId.current = null;
     typedIndex.current = 0;
     voiceCtl.current.cancel();
     setSpeechDone(true);
     setCurrent(null);
     setTyped("");
-  }, [deck, live, operatorId]);
+  }, [briefingId, deck, live, operatorId]);
 
   useEffect(() => {
     if (!live || paused || current) return;
@@ -117,9 +168,20 @@ export function WatchOfficer({ operatorId }: { operatorId: string }) {
   }, [current, live, paused, queueTick]);
 
   useEffect(() => {
-    if (!voice || !live || !current) {
-      voiceCtl.current.cancel();
-      spokenId.current = null;
+    const busyReadback = readbackOn && voiceCtl.current.isBusy();
+    if (!shouldSpeak || !live || !current) {
+      if (busyReadback) return;
+      if (!shouldSpeak || !current) {
+        if (!readbackOn) {
+          voiceCtl.current.cancel();
+          spokenId.current = null;
+          setSpeechDone(true);
+        }
+      }
+      return;
+    }
+
+    if (busyReadback) {
       setSpeechDone(true);
       return;
     }
@@ -145,7 +207,7 @@ export function WatchOfficer({ operatorId }: { operatorId: string }) {
     voiceCtl.current.speak(current.text).then((completed) => {
       if (completed && spokenId.current === lineId) setSpeechDone(true);
     });
-  }, [current, live, paused, voice]);
+  }, [briefingId, current, live, paused, readbackOn, shouldSpeak]);
 
   useEffect(() => {
     if (!live || paused || !current) return;
@@ -169,7 +231,7 @@ export function WatchOfficer({ operatorId }: { operatorId: string }) {
   useEffect(() => {
     if (!live || paused || !current) return;
     if (typed !== current.text) return;
-    if (voice && !speechDone) return;
+    if (shouldSpeak && !speechDone && !readbackOn) return;
 
     const dwell = window.setTimeout(
       () => {
@@ -178,14 +240,14 @@ export function WatchOfficer({ operatorId }: { operatorId: string }) {
         setTyped("");
         typedIndex.current = 0;
       },
-      voice ? 350 : 1400,
+      shouldSpeak && !readbackOn ? 350 : 1400,
     );
 
     return () => window.clearTimeout(dwell);
-  }, [current, live, paused, speechDone, typed, voice]);
+  }, [current, live, paused, readbackOn, shouldSpeak, speechDone, typed]);
 
   useEffect(() => {
-    if (!live || paused || current || pending.current.length) return;
+    if (!live || paused || current || pending.current.length || briefingId) return;
 
     const timer = window.setInterval(() => {
       if (held || currentRef.current || pending.current.length) return;
@@ -194,7 +256,7 @@ export function WatchOfficer({ operatorId }: { operatorId: string }) {
     }, 16000);
 
     return () => window.clearInterval(timer);
-  }, [current, deck, held, live, paused]);
+  }, [briefingId, current, deck, held, live, paused]);
 
   useEffect(() => () => voiceCtl.current.cancel(), []);
 

@@ -1,7 +1,8 @@
-import { alertQueue } from "@/lib/mock/alerts";
+import { alertQueue, type AlertItem } from "@/lib/mock/alerts";
 import { observations } from "@/lib/mock/observe";
 import { overviewKpis } from "@/lib/mock/overview";
 import { satellites } from "@/lib/mock/network";
+import { getWatchVoice } from "@/lib/watch-voice";
 
 export type WatchDeck = "overview" | "network" | "observe" | "alerts";
 export type WatchTone = "cyan" | "amber" | "red";
@@ -12,6 +13,63 @@ export type WatchLine = {
 };
 
 export const WATCH_VOICE_KEY = "aeon.watch.voice";
+export const WATCH_READBACK_EVENT = "aeon-watch-readback";
+
+let queuedReadback: WatchLine[] | null = null;
+let queuedReadbackId: string | null = null;
+
+export function findAlert(id: string) {
+  return alertQueue.find((item) => item.id === id) ?? null;
+}
+
+export function incidentBrief(alert: AlertItem): WatchLine[] {
+  const tone: WatchTone =
+    alert.severity === "critical" ? "red" : alert.severity === "high" ? "amber" : "cyan";
+  const point =
+    alert.severity === "critical"
+      ? "Critical point"
+      : alert.severity === "high"
+        ? "High point"
+        : "Watch item";
+
+  return [
+    {
+      tone,
+      text: `Acknowledged. ${point} ${alert.id}, ${alert.title}. ${alert.region}, station ${alert.station}. SLA ${alert.slaMin} minutes. Owner ${alert.owner ?? "unassigned"}.`,
+    },
+    {
+      tone,
+      text: alert.summary,
+    },
+    {
+      tone: "amber",
+      text: `Forecast ${alert.prediction.horizon}, ${alert.prediction.confidence} percent confidence. ${alert.prediction.outlook}`,
+    },
+    {
+      tone,
+      text: `Impact: ${alert.prediction.impact} Next action: ${alert.prediction.next}`,
+    },
+  ];
+}
+
+export function beginIncidentReadback(alert: AlertItem) {
+  const lines = incidentBrief(alert);
+  queuedReadback = lines;
+  queuedReadbackId = alert.id;
+  void getWatchVoice().speak(lines.map((line) => line.text).join(" "));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(WATCH_READBACK_EVENT));
+  }
+  return lines;
+}
+
+export function takeQueuedReadback() {
+  if (!queuedReadback) return null;
+  const next = { id: queuedReadbackId, lines: queuedReadback };
+  queuedReadback = null;
+  queuedReadbackId = null;
+  return next;
+}
 
 export function deckFromPath(pathname: string): WatchDeck {
   if (pathname.startsWith("/command/network")) return "network";
