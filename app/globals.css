@@ -304,6 +304,21 @@ body {
   transform-origin: center;
 }
 
+@keyframes aeon-caret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.aeon-caret {
+  animation: aeon-caret 1s steps(1) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .aeon-orbit,
   .aeon-orbit-slow,
@@ -319,7 +334,8 @@ body {
   .aeon-shimmer,
   .aeon-rise,
   .aeon-map-scanline,
-  .aeon-marker-in {
+  .aeon-marker-in,
+  .aeon-caret {
     animation: none;
   }
 

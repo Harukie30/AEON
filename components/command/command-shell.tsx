@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { DeckLoader } from "@/components/command/deck-loader";
 import { DeckRevealProvider } from "@/components/command/deck-reveal";
 import { ThreatBulletin } from "@/components/command/threat-bulletin";
+import { WatchOfficer } from "@/components/command/watch-officer";
 import { useUtcLabel } from "@/lib/clock";
 import { clearSession, markSessionEnded, SESSION_BOOT } from "@/lib/session";
 import { useAeonSession } from "@/lib/use-session";
@@ -142,7 +143,14 @@ export function CommandShell({ children }: { children: ReactNode }) {
       </header>
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-        <DeckRevealProvider ready={!loader}>{children}</DeckRevealProvider>
+        <DeckRevealProvider ready={!loader}>
+          {children}
+          {!ending ? (
+            <Suspense fallback={null}>
+              <WatchOfficer operatorId={operatorId} />
+            </Suspense>
+          ) : null}
+        </DeckRevealProvider>
       </div>
 
       {loader ? (
